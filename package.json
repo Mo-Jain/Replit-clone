@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/Mo-Jain/Replit-clone/issues"
   },
-  "homepage": "https://github.com/Mo-Jain/Replit-clone#readme"
+  "homepage": "https://github.com/Mo-Jain/Replit-clone#readme",
+  "dependencies": {
+    "@monaco-editor/react": "^4.6.0"
+  }
 }

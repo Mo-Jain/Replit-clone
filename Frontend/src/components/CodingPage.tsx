@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Socket, io } from 'socket.io-client';
 import styled from '@emotion/styled';
+import Editor from "./Editor";
 
 function useSocket(replId: string) {
     const [socket, setSocket] = useState<Socket | null>(null);
@@ -82,7 +83,7 @@ export const CodingPagePostPodCreation = () => {
             </ButtonContainer>
             <Workspace>
                 <LeftPanel>
-                    <Editor  />
+                    <Editor socket={socket} />
                 </LeftPanel>
                 <RightPanel>
                     <Terminal />
