@@ -1,7 +1,6 @@
 import { Server, Socket } from "socket.io";
 import { Server as HttpServer } from "http";
 import { saveToS3 } from "./aws";
-import path from "path";
 import { fetchDir, fetchFileContent, saveFile } from "./fs";
 import { TerminalManager } from "./pty";
 
