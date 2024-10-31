@@ -1,8 +1,11 @@
 import { Server, Socket } from "socket.io";
 import { Server as HttpServer } from "http";
 import { saveToS3 } from "./aws";
+import path from "path";
 import { fetchDir, fetchFileContent, saveFile } from "./fs";
+import { TerminalManager } from "./pty";
 
+const terminalManager = new TerminalManager();
 
 export function initWs(httpServer: HttpServer) {
     const io = new Server(httpServer, {
@@ -22,6 +25,7 @@ export function initWs(httpServer: HttpServer) {
     
         if (!replId) {
             socket.disconnect();
+            terminalManager.clear(socket.id);
             return;
         }
 
@@ -58,6 +62,18 @@ function initHandlers(socket: Socket, replId: string) {
         const fullPath =  `/workspace/${filePath}`;
         await saveFile(fullPath, content);
         await saveToS3(`code/${replId}`, filePath, content);
+    });
+
+    socket.on("requestTerminal", async () => {
+        terminalManager.createPty(socket.id, replId, (data, id) => {
+            socket.emit('terminal', {
+                data: Buffer.from(data,"utf-8")
+            });
+        });
+    });
+    
+    socket.on("terminalData", async ({ data }: { data: string, terminalId: number }) => {
+        terminalManager.write(socket.id, data);
     });
 
 }
