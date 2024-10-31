@@ -7,32 +7,6 @@ const s3 = new S3({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     endpoint: process.env.S3_ENDPOINT
 })
-export const fetchS3Folder = async (key: string, localPath: string): Promise<void> => {
-    const params = {
-        Bucket: process.env.S3_BUCKET ?? "",
-        Prefix: key
-    }
-
-    const response = await s3.listObjectsV2(params).promise()
-    if (response.Contents) {
-        for (const file of response.Contents) {
-            const fileKey = file.Key
-            if (fileKey) {
-                const params = {
-                    Bucket: process.env.S3_BUCKET ?? "",
-                    Key: fileKey
-                }
-                const data = await s3.getObject(params).promise()
-                if (data.Body) {
-                    const fileData = data.Body
-                    const filePath = `${localPath}/${fileKey.replace(key, "")}`
-                    //@ts-ignore
-                    await writeFile(filePath, fileData)
-                }
-            }
-        }
-    }
-}
 
 export async function copyS3Folder(sourcePrefix: string, destinationPrefix: string, continuationToken?: string): Promise<void> {
     try {
