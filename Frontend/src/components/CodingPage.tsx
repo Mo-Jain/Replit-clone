@@ -1,8 +1,12 @@
-import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useState } from 'react';
 import { Socket, io } from 'socket.io-client';
+import { Editor } from './Editor';
+import { File, RemoteFile, Type } from './external/utils/file-manager';
+import { useSearchParams } from 'react-router-dom';
 import styled from '@emotion/styled';
-import Editor from "./Editor";
+import { TerminalComponent as Terminal } from './Terminal';
+import axios from 'axios';
+import { Output } from './Output';
 
 function useSocket(replId: string) {
     const [socket, setSocket] = useState<Socket | null>(null);
@@ -51,7 +55,16 @@ const RightPanel = styled.div`
 
 export const CodingPage = () => {
     const [podCreated, setPodCreated] = useState(false);
+    const [searchParams] = useSearchParams();
+    const replId = searchParams.get('replId') ?? '';
     
+    useEffect(() => {
+        if (replId) {
+            axios.post(`http://localhost:3002/start`, { replId })
+                .then(() => setPodCreated(true))
+                .catch((err) => console.error(err));
+        }
+    }, []);
 
     if (!podCreated) {
         return <>Booting...</>
@@ -64,32 +77,55 @@ export const CodingPagePostPodCreation = () => {
     const replId = searchParams.get('replId') ?? '';
     const [loaded, setLoaded] = useState(false);
     const socket = useSocket(replId);
-    const [fileStructure, setFileStructure] = useState<any>([]);
-
+    const [fileStructure, setFileStructure] = useState<RemoteFile[]>([]);
+    const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined);
+    const [showOutput, setShowOutput] = useState(false);
 
     useEffect(() => {
         if (socket) {
-            socket.on('loaded', ({ rootContent }: { rootContent: any}) => {
+            socket.on('loaded', ({ rootContent }: { rootContent: RemoteFile[]}) => {
                 setLoaded(true);
                 setFileStructure(rootContent);
             });
         }
     }, [socket]);
+
+    const onSelect = (file: File) => {
+        if (file.type === Type.DIRECTORY) {
+            socket?.emit("fetchDir", file.path, (data: RemoteFile[]) => {
+                setFileStructure(prev => {
+                    const allFiles = [...prev, ...data];
+                    return allFiles.filter((file, index, self) => 
+                        index === self.findIndex(f => f.path === file.path)
+                    );
+                });
+            });
+        } else {
+            socket?.emit("fetchContent", { path: file.path }, (data: string) => {
+                file.content = data;
+                setSelectedFile(file);
+            });
+        }
+    };
     
-    return <>
-             <Container>
+    if (!loaded) {
+        return "Loading...";
+    }
+
+    return (
+        <Container>
              <ButtonContainer>
-                <button >See output</button>
+                <button onClick={() => setShowOutput(!showOutput)}>See output</button>
             </ButtonContainer>
             <Workspace>
                 <LeftPanel>
-                    <Editor socket={socket} />
+                    <Editor socket={socket} selectedFile={selectedFile} onSelect={onSelect} files={fileStructure} />
                 </LeftPanel>
                 <RightPanel>
-                    <Terminal />
+                    {showOutput && <Output/>}
+                    <Terminal socket={socket} />
                 </RightPanel>
             </Workspace>
         </Container>
-    </>
-
+    );
 }
