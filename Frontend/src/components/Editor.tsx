@@ -1,24 +1,44 @@
-import styled from "@emotion/styled";
-import { Code } from "./external/editor/code";
+import { useEffect, useMemo } from "react";
 import Sidebar from "./external/components/sidebar";
+import { Code } from "./external/editor/code";
+import styled from "@emotion/styled";
+import { File, buildFileTree, RemoteFile } from "./external/utils/file-manager";
+import { FileTree } from "./external/components/file-tree";
 import { Socket } from "socket.io-client";
 
 // credits - https://codesandbox.io/s/monaco-tree-pec7u
 export const Editor = ({
+    files,
+    onSelect,
+    selectedFile,
     socket
 }: {
+    files: RemoteFile[];
+    onSelect: (file: File) => void;
+    selectedFile: File | undefined;
     socket: Socket;
 }) => {
-  
+  const rootDir = useMemo(() => {
+    return buildFileTree(files);
+  }, [files]);
+
+  useEffect(() => {
+    if (!selectedFile) {
+      onSelect(rootDir.files[0])
+    }
+  }, [selectedFile])
 
   return (
     <div>
       <Main>
         <Sidebar>
           <FileTree
+            rootDir={rootDir}
+            selectedFile={selectedFile}
+            onSelect={onSelect}
           />
         </Sidebar>
-        <Code socket={socket} />
+        <Code socket={socket} selectedFile={selectedFile} />
       </Main>
     </div>
   );

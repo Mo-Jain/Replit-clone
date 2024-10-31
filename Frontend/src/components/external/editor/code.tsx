@@ -1,8 +1,9 @@
 import Editor from "@monaco-editor/react";
+import { File } from "../utils/file-manager";
 import { Socket } from "socket.io-client";
 import { useState } from "react";
 
-export const Code = ({ selectedFile, socket }: { selectedFile: any, socket: Socket }) => {
+export const Code = ({ selectedFile, socket }: { selectedFile: File | undefined, socket: Socket }) => {
   
   if (!selectedFile || selectedFile == undefined ) return null;
 
